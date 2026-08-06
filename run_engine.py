@@ -7,6 +7,7 @@ from flow_step import FlowStep
 import threading
 
 
+
 class RunEngine(QObject):
     step_started = Signal(int)
     step_finished = Signal(int)
@@ -40,6 +41,8 @@ class RunEngine(QObject):
         self.wait_timer = QTimer(self)
         self.wait_timer.setSingleShot(True)
         self.wait_timer.timeout.connect(self._on_wait_finished)
+        # 桌面执行器
+        self.desktop_executor = None
 
         # 上传相关
         self.cdp_fetcher = None
@@ -92,6 +95,9 @@ class RunEngine(QObject):
         self._execute_action(step)
 
     def _execute_action(self, step):
+        if step.type.startswith('desktop_'):
+            self._execute_desktop_step(step)
+            return
         if step.type == 'click':
             self._execute_click(step)
         elif step.type == 'input':
@@ -611,7 +617,16 @@ class RunEngine(QObject):
             try:
                 import os, shutil, glob
                 import datetime as dt
-                namespace = {'os': os, 'shutil': shutil, 'glob': glob, 'datetime': dt}
+                from send2trash import send2trash
+                from pywinauto import Desktop, pywinauto
+                
+                namespace = {
+    'os': os, 'shutil': shutil, 'glob': glob, 'datetime': dt,
+    'send2trash': send2trash,
+    'window': getattr(self, 'current_desktop_window', None),
+    'desktop': Desktop(backend=self.desktop_executor.backend) if hasattr(self, 'desktop_executor') else None,
+    'pywinauto': pywinauto
+}
                 exec(code, namespace)
             except Exception as e:
                 exec_err.append(str(e))
@@ -627,6 +642,49 @@ class RunEngine(QObject):
             self._log(f"步骤 {self.current_index+1} Python 执行错误: {exec_err[0]}")
 
         self._step_done()
+
+    def _execute_desktop_step(self, step):
+        # 延迟导入桌面执行器，避免启动时改变 COM 模式
+        if self.desktop_executor is None:
+            from desktop_executor import DesktopExecutor
+            self.desktop_executor = DesktopExecutor()
+        try:
+            if step.type == 'desktop_focus':
+                # 连接窗口，value 存储窗口标题或进程名，也可从 selector 获取额外属性
+                title = step.value.strip() if step.value else None
+                self.desktop_executor.connect(target=title)
+            elif step.type == 'desktop_click':
+                self.desktop_executor.click(step.selector)
+            elif step.type == 'desktop_input':
+                # 支持日期占位符，与 Web 输入一致
+                text = self._replace_date_placeholders(step.value)
+                self.desktop_executor.input(step.selector, text)
+            elif step.type == 'desktop_wait':
+                timeout_ms = step.timeout if step.timeout > 0 else 5000
+                if not self.desktop_executor.wait(step.selector, timeout_ms):
+                    self._log(f"步骤 {self.current_index+1} 桌面等待超时：{step.selector}")
+            elif step.type == 'desktop_extract':
+                attr = step.extract_attr if step.extract_attr else 'name'
+                value = self.desktop_executor.extract(step.selector, attr)
+                if value is not None:
+                    self.extracted_data.append({
+                        'field': step.field_name,
+                        'value': value,
+                        'selector': step.selector
+                    })
+                else:
+                    self._log(f"步骤 {self.current_index+1} 桌面提取失败：未获取到值")
+            elif step.type == 'desktop_python':
+                # 将当前窗口和桌面对象注入到 Python 执行环境中
+                self.current_desktop_window = self.desktop_executor.current_window
+                self._execute_python(step)
+                self.current_desktop_window = None
+            else:
+                self._log(f"未知桌面步骤类型: {step.type}")
+        except Exception as e:
+            self._log(f"步骤 {self.current_index+1} 桌面操作错误: {str(e)}")
+        finally:
+            self._step_done()
 
     def _step_done(self):
         self.step_finished.emit(self.current_index)

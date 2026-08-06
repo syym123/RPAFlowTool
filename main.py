@@ -28,7 +28,8 @@ class StepTreeItem(QTreeWidgetItem):
             self.setText(0, name)
         else:
             type_names = {'click': '点击元素', 'input': '输入文本', 'extract': '提取数据',
-                          'wait': '等待', 'navigate': '打开网页', 'js': 'JS脚本', 'upload': '上传文件', 'python': 'Python脚本'}
+                          'wait': '等待', 'navigate': '打开网页', 'js': 'JS脚本', 'upload': '上传文件', 'python': 'Python脚本', 
+                          'desktop_focus': '窗口连接', 'desktop_click': '桌面点击', 'desktop_input': '桌面输入', 'desktop_wait': '桌面等待', 'desktop_extract': '桌面提取', 'desktop_python': '桌面Python'}
             desc = type_names.get(self.step_data.type, self.step_data.type)
             name = self.step_data.name if self.step_data.name else desc
             self.setText(0, name)
@@ -81,6 +82,12 @@ class NodeTypeDialog(QDialog):
         self.type_combo.addItem("JS脚本", "js")
         self.type_combo.addItem("上传文件", "upload")
         self.type_combo.addItem("Python脚本", "python")
+        self.type_combo.addItem("窗口连接", "desktop_focus")
+        self.type_combo.addItem("桌面点击", "desktop_click")
+        self.type_combo.addItem("桌面输入", "desktop_input")
+        self.type_combo.addItem("桌面等待", "desktop_wait")
+        self.type_combo.addItem("桌面提取", "desktop_extract")
+        self.type_combo.addItem("桌面Python", "desktop_python")
         if allow_group:
             self.type_combo.addItem("板块（分组）", "group")
         form.addRow("节点类型:", self.type_combo)
@@ -178,6 +185,12 @@ class MainWindow(QMainWindow):
         self.type_switch_combo.addItem("JS脚本", "js")
         self.type_switch_combo.addItem("上传文件", "upload")
         self.type_switch_combo.addItem("Python脚本", "python")
+        self.type_switch_combo.addItem("窗口连接", "desktop_focus")
+        self.type_switch_combo.addItem("桌面点击", "desktop_click")
+        self.type_switch_combo.addItem("桌面输入", "desktop_input")
+        self.type_switch_combo.addItem("桌面等待", "desktop_wait")
+        self.type_switch_combo.addItem("桌面提取", "desktop_extract")
+        self.type_switch_combo.addItem("桌面Python", "desktop_python")
         self.type_switch_combo.addItem("板块（分组）", "group")
         self.type_switch_combo.currentIndexChanged.connect(self._on_type_switched)
         config_header.addWidget(self.type_switch_combo)
@@ -377,7 +390,8 @@ class MainWindow(QMainWindow):
 
     # ===================== 配置页创建 =====================
     def _create_config_pages(self):
-        types = ['navigate', 'click', 'input', 'extract', 'wait', 'group', 'js', 'upload', 'python']
+        types = ['navigate', 'click', 'input', 'extract', 'wait',  'js', 'upload', 'python',
+                'desktop_focus', 'desktop_click', 'desktop_input', 'desktop_wait', 'desktop_extract', 'desktop_python','group']
         for t in types:
             self.step_controls[t] = {}
 
@@ -389,7 +403,13 @@ class MainWindow(QMainWindow):
         self._make_js_page()          # 索引 5
         self._make_upload_page()      # 索引 6
         self._make_python_page()      # 索引 7
-        self._create_group_page()     # 索引 8 （移到最后）
+        self._make_desktop_focus_page()
+        self._make_desktop_click_page()
+        self._make_desktop_input_page()
+        self._make_desktop_wait_page()
+        self._make_desktop_extract_page()
+        self._make_desktop_python_page()
+        self._create_group_page()     # 索引 14 （移到最后）
 
         for t, ctrls in self.step_controls.items():
             for name, widget in ctrls.items():
@@ -547,6 +567,106 @@ class MainWindow(QMainWindow):
         layout.addWidget(code_edit)
         self.step_controls['python']['code_edit'] = code_edit
 
+        layout.addStretch()
+        self.config_stack.addWidget(page)
+
+    def _make_desktop_focus_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        name_edit = QLineEdit()
+        layout.addWidget(QLabel("名称:"))
+        layout.addWidget(name_edit)
+        self.step_controls['desktop_focus'] = {'name_edit': name_edit}
+        layout.addWidget(QLabel("窗口标题/进程:"))
+        title_edit = QLineEdit()
+        layout.addWidget(title_edit)
+        self.step_controls['desktop_focus']['title_edit'] = title_edit
+        layout.addStretch()
+        self.config_stack.addWidget(page)
+
+    def _make_desktop_click_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        name_edit = QLineEdit()
+        layout.addWidget(QLabel("名称:"))
+        layout.addWidget(name_edit)
+        self.step_controls['desktop_click'] = {'name_edit': name_edit}
+        layout.addWidget(QLabel("选择器:"))
+        sel_edit = QLineEdit()
+        layout.addWidget(sel_edit)
+        self.step_controls['desktop_click']['selector_edit'] = sel_edit
+        layout.addStretch()
+        self.config_stack.addWidget(page)
+
+    def _make_desktop_input_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        name_edit = QLineEdit()
+        layout.addWidget(QLabel("名称:"))
+        layout.addWidget(name_edit)
+        self.step_controls['desktop_input'] = {'name_edit': name_edit}
+        layout.addWidget(QLabel("选择器:"))
+        sel_edit = QLineEdit()
+        layout.addWidget(sel_edit)
+        self.step_controls['desktop_input']['selector_edit'] = sel_edit
+        layout.addWidget(QLabel("输入文本:"))
+        value_edit = QTextEdit()
+        layout.addWidget(value_edit)
+        self.step_controls['desktop_input']['value_edit'] = value_edit
+        layout.addStretch()
+        self.config_stack.addWidget(page)
+
+    def _make_desktop_wait_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        name_edit = QLineEdit()
+        layout.addWidget(QLabel("名称:"))
+        layout.addWidget(name_edit)
+        self.step_controls['desktop_wait'] = {'name_edit': name_edit}
+        layout.addWidget(QLabel("选择器:"))
+        sel_edit = QLineEdit()
+        layout.addWidget(sel_edit)
+        self.step_controls['desktop_wait']['selector_edit'] = sel_edit
+        layout.addWidget(QLabel("超时(ms):"))
+        timeout_edit = QLineEdit("5000")
+        layout.addWidget(timeout_edit)
+        self.step_controls['desktop_wait']['timeout_edit'] = timeout_edit
+        layout.addStretch()
+        self.config_stack.addWidget(page)
+
+    def _make_desktop_extract_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        name_edit = QLineEdit()
+        layout.addWidget(QLabel("名称:"))
+        layout.addWidget(name_edit)
+        self.step_controls['desktop_extract'] = {'name_edit': name_edit}
+        layout.addWidget(QLabel("选择器:"))
+        sel_edit = QLineEdit()
+        layout.addWidget(sel_edit)
+        self.step_controls['desktop_extract']['selector_edit'] = sel_edit
+        layout.addWidget(QLabel("字段名:"))
+        field_edit = QLineEdit()
+        layout.addWidget(field_edit)
+        self.step_controls['desktop_extract']['field_edit'] = field_edit
+        layout.addWidget(QLabel("提取属性:"))
+        attr_edit = QLineEdit("name")
+        layout.addWidget(attr_edit)
+        self.step_controls['desktop_extract']['attr_edit'] = attr_edit
+        layout.addStretch()
+        self.config_stack.addWidget(page)
+
+    def _make_desktop_python_page(self):
+        page = QWidget()
+        layout = QVBoxLayout(page)
+        name_edit = QLineEdit()
+        layout.addWidget(QLabel("名称:"))
+        layout.addWidget(name_edit)
+        self.step_controls['desktop_python'] = {'name_edit': name_edit}
+        layout.addWidget(QLabel("Python 代码:"))
+        code_edit = QTextEdit()
+        layout.addWidget(code_edit)
+        self.step_controls['desktop_python']['code_edit'] = code_edit
         layout.addStretch()
         self.config_stack.addWidget(page)
 
@@ -712,19 +832,24 @@ class MainWindow(QMainWindow):
     def _deserialize_tree_item(self, data, parent):
         step_dict = data['step']
         step = FlowStep(
-            id=step_dict.get('id', 0), type=step_dict.get('type', 'click'),
-            name=step_dict.get('name', ''), selector=step_dict.get('selector', ''),
+            id=step_dict.get('id', 0),
+            type=step_dict.get('type', 'click'),
+            name=step_dict.get('name', ''),
+            selector=step_dict.get('selector', ''),
             selector_type=step_dict.get('selector_type', 'xpath'),
-            value=step_dict.get('value', ''), field_name=step_dict.get('field_name', ''),
-            extract_attr=step_dict.get('extract_attr', 'text'), timeout=step_dict.get('timeout', 5000),
+            value=step_dict.get('value', ''),
+            field_name=step_dict.get('field_name', ''),          
+            extract_attr=step_dict.get('extract_attr', 'text'),
+            timeout=step_dict.get('timeout', 5000),
             pre_wait_seconds=step_dict.get('pre_wait_seconds', 0),
             pre_wait_element=step_dict.get('pre_wait_element', False),
             pre_wait_xpath=step_dict.get('pre_wait_xpath', ''),
             date_format=step_dict.get('date_format', ''),
-            use_today=step_dict.get('use_today', True), fixed_date=step_dict.get('fixed_date', ''),
+            use_today=step_dict.get('use_today', True),
+            fixed_date=step_dict.get('fixed_date', ''),
             js_code=step_dict.get('js_code', ''),
             upload_file_path=step_dict.get('upload_file_path', ''),
-            python_code=step_dict.get('python_code', '')
+            python_code=step_dict.get('python_code', '')        
         )
         item = StepTreeItem(step)
         parent.addChild(item)
@@ -733,41 +858,259 @@ class MainWindow(QMainWindow):
         return item
 
     def _save_flow(self):
-        if self.step_tree.topLevelItemCount() == 0:
-            QMessageBox.warning(self, "警告", "没有步骤可保存")
-            return
-        filepath, _ = QFileDialog.getSaveFileName(self, "保存流程", self.current_file_path or "flow.json",
-                                                  "JSON 文件 (*.json);;所有文件 (*)")
-        if not filepath:
-            return
-        try:
-            tree_data = []
-            for i in range(self.step_tree.topLevelItemCount()):
-                item = self.step_tree.topLevelItem(i)
-                if isinstance(item, StepTreeItem):
-                    tree_data.append(self._serialize_tree_item(item))
-            with open(filepath, 'w', encoding='utf-8') as f:
-                json.dump(tree_data, f, ensure_ascii=False, indent=2)
-            self.current_file_path = filepath
-            self.statusBar().showMessage(f"流程已保存至 {filepath}")
-        except Exception as e:
-            QMessageBox.critical(self, "保存失败", str(e))
+
+        print("进入保存流程")
+
+        from PySide6.QtWidgets import QFileDialog
+
+        dialog = QFileDialog(self)
+
+        dialog.setWindowTitle(
+            "保存流程"
+        )
+
+        dialog.setAcceptMode(
+            QFileDialog.AcceptSave
+        )
+
+        dialog.setNameFilter(
+            "JSON 文件 (*.json)"
+        )
+
+
+        # 关键修改：
+        # 禁止 Windows 原生保存框
+
+        dialog.setOption(
+            QFileDialog.DontUseNativeDialog,
+            True
+        )
+
+
+        def on_finished(result):
+
+            print(
+                "保存窗口关闭:",
+                result
+            )
+
+
+            if result:
+
+                files = dialog.selectedFiles()
+
+
+                if files:
+
+                    filepath = files[0]
+
+
+                    if not filepath.lower().endswith(".json"):
+
+                        filepath += ".json"
+
+
+                    print(
+                        "保存路径:",
+                        filepath
+                    )
+
+
+                    try:
+
+                        import json
+
+
+                        tree_data = []
+
+
+                        for i in range(
+                            self.step_tree.topLevelItemCount()
+                        ):
+
+                            item = (
+                                self.step_tree.topLevelItem(i)
+                            )
+
+
+                            if isinstance(
+                                item,
+                                StepTreeItem
+                            ):
+
+                                tree_data.append(
+                                    self._serialize_tree_item(
+                                        item
+                                    )
+                                )
+
+
+                        with open(
+                            filepath,
+                            "w",
+                            encoding="utf-8"
+                        ) as f:
+
+                            json.dump(
+                                tree_data,
+                                f,
+                                ensure_ascii=False,
+                                indent=2
+                            )
+
+
+                        QMessageBox.information(
+                            self,
+                            "保存成功",
+                            "流程保存成功"
+                        )
+
+
+                    except Exception as e:
+
+                        import traceback
+
+                        traceback.print_exc()
+
+
+                        QMessageBox.critical(
+                            self,
+                            "保存失败",
+                            str(e)
+                        )
+
+
+            dialog.deleteLater()
+
+
+
+        dialog.finished.connect(
+            on_finished
+        )
+
+
+        # 不进入第二事件循环
+        dialog.open()
 
     def _load_flow(self):
-        filepath, _ = QFileDialog.getOpenFileName(self, "加载流程", "", "JSON 文件 (*.json);;所有文件 (*)")
-        if not filepath:
-            return
-        try:
-            with open(filepath, 'r', encoding='utf-8') as f:
-                tree_data = json.load(f)
-            self.step_tree.clear()
-            for item_data in tree_data:
-                self._deserialize_tree_item(item_data, self.step_tree.invisibleRootItem())
-            self.steps = self._build_flat_steps_list()
-            self.current_file_path = filepath
-            self.statusBar().showMessage(f"已加载流程：{filepath}")
-        except Exception as e:
-            QMessageBox.critical(self, "加载失败", str(e))
+
+        print("进入加载流程")
+
+        from PySide6.QtWidgets import QFileDialog
+
+        dialog = QFileDialog(self)
+
+        dialog.setWindowTitle("加载流程")
+
+        dialog.setFileMode(
+            QFileDialog.ExistingFile
+        )
+
+        dialog.setNameFilter(
+            "JSON 文件 (*.json)"
+        )
+
+        # 关键修改：
+        # 不使用 Windows 原生文件框
+        dialog.setOption(
+            QFileDialog.DontUseNativeDialog,
+            True
+        )
+
+        def on_finished(result):
+
+            print("加载窗口关闭:", result)
+
+            if result:
+
+                files = dialog.selectedFiles()
+
+                if files:
+
+                    filepath = files[0]
+
+                    print(
+                        "加载文件:",
+                        filepath
+                    )
+
+                    try:
+
+                        import json
+
+                        with open(
+                            filepath,
+                            "r",
+                            encoding="utf-8"
+                        ) as f:
+
+                            tree_data = json.load(f)
+
+
+                        if not isinstance(tree_data, list):
+
+                            raise ValueError(
+                                "流程文件格式错误"
+                            )
+
+
+                        # 清理状态
+
+                        self.current_step = None
+
+                        self.running_steps.clear()
+
+
+                        self.step_tree.blockSignals(True)
+
+                        self.step_tree.clear()
+
+
+                        for item_data in tree_data:
+
+                            self._deserialize_tree_item(
+                                item_data,
+                                self.step_tree.invisibleRootItem()
+                            )
+
+
+                        self.step_tree.blockSignals(False)
+
+
+                        self.steps = (
+                            self._build_flat_steps_list()
+                        )
+
+
+                        print(
+                            "加载完成，步骤数量:",
+                            len(self.steps)
+                        )
+
+
+                    except Exception as e:
+
+                        import traceback
+
+                        traceback.print_exc()
+
+                        QMessageBox.critical(
+                            self,
+                            "加载失败",
+                            str(e)
+                        )
+
+
+            dialog.deleteLater()
+
+
+        dialog.finished.connect(
+            on_finished
+        )
+
+
+        # 不阻塞 Qt 主事件循环
+        dialog.open()
 
     def _save_default_flow(self):
         if self.step_tree.topLevelItemCount() == 0:
@@ -1183,7 +1526,8 @@ class MainWindow(QMainWindow):
         new_id = len(self._build_flat_steps_list()) + 1
         step = FlowStep(id=new_id, type=node_type)
         type_names = {'click': '点击元素', 'input': '输入文本', 'extract': '提取数据',
-                      'wait': '等待', 'navigate': '打开网页', 'group': '板块', 'js': 'JS脚本', 'upload': '上传文件', 'python': 'Python脚本'}
+                      'wait': '等待', 'navigate': '打开网页', 'group': '板块', 'js': 'JS脚本', 'upload': '上传文件', 'python': 'Python脚本',
+                      'desktop_focus': '窗口连接', 'desktop_click': '桌面点击','desktop_input': '桌面输入', 'desktop_wait': '桌面等待','desktop_extract': '桌面提取', 'desktop_python': '桌面Python'}
         base_name = type_names.get(node_type, '步骤')
         if node_type != 'group':
             count = self._get_type_count(node_type) + 1
@@ -1245,48 +1589,86 @@ class MainWindow(QMainWindow):
         for w in [self.chk_pre_wait, self.spin_pre_wait, self.chk_pre_wait_element, self.pre_wait_xpath_edit]:
             if w:
                 w.blockSignals(block)
-
     def _populate_controls(self, step):
         self._block_all_controls(True)
-        if step.type in self.step_controls and 'name_edit' in self.step_controls[step.type]:
-            self.step_controls[step.type]['name_edit'].setText(step.name)
-        if step.type == 'navigate':
-            c = self.step_controls['navigate']
-            c['url_edit'].setText(step.value); c['timeout_edit'].setText(str(step.timeout))
-        elif step.type == 'click':
-            c = self.step_controls['click']
-            c['selector_edit'].setText(step.selector); c['timeout_edit'].setText(str(step.timeout))
-        elif step.type == 'input':
-            c = self.step_controls['input']
-            c['selector_edit'].setText(step.selector); c['value_edit'].setPlainText(step.value)
-        elif step.type == 'extract':
-            c = self.step_controls['extract']
-            c['selector_edit'].setText(step.selector); c['field_edit'].setText(step.field_name); c['attr_edit'].setText(step.extract_attr)
-        elif step.type == 'wait':
-            c = self.step_controls['wait']
-            c['timeout_edit'].setText(str(step.timeout))
-        elif step.type == 'js':
-            c = self.step_controls['js']
-            c['field_edit'].setText(step.field_name); c['code_edit'].setPlainText(step.js_code)
-        elif step.type == 'upload':
-            c = self.step_controls['upload']
-            c['selector_edit'].setText(step.selector); c['path_edit'].setText(step.upload_file_path)
-        elif step.type == 'python':
-            c = self.step_controls['python']
-            c['name_edit'].setText(step.name); c['code_edit'].setPlainText(step.python_code)
-        show_pre = step.type not in ('wait', 'group', 'js', 'upload', 'python')
+        t = step.type
+
+        ctrls = self.step_controls.get(t)
+        if ctrls is None:
+            print(f"[警告] 未知步骤类型 {t}，无法填充配置页")
+            self._block_all_controls(False)
+            return
+
+        # 统一设置名称（所有类型都有 name_edit）
+        if 'name_edit' in ctrls:
+            ctrls['name_edit'].setText(step.name if step.name else '')
+
+        # 按类型填充具体字段
+        if t == 'navigate':
+            if 'url_edit' in ctrls: ctrls['url_edit'].setText(step.value or '')
+            if 'timeout_edit' in ctrls: ctrls['timeout_edit'].setText(str(step.timeout))
+        elif t == 'click':
+            if 'selector_edit' in ctrls: ctrls['selector_edit'].setText(step.selector or '')
+            if 'timeout_edit' in ctrls: ctrls['timeout_edit'].setText(str(step.timeout))
+        elif t == 'input':
+            if 'selector_edit' in ctrls: ctrls['selector_edit'].setText(step.selector or '')
+            if 'value_edit' in ctrls: ctrls['value_edit'].setPlainText(step.value or '')
+        elif t == 'extract':
+            if 'selector_edit' in ctrls: ctrls['selector_edit'].setText(step.selector or '')
+            if 'field_edit' in ctrls: ctrls['field_edit'].setText(step.field_name or '')
+            if 'attr_edit' in ctrls: ctrls['attr_edit'].setText(step.extract_attr or '')
+        elif t == 'wait':
+            if 'timeout_edit' in ctrls: ctrls['timeout_edit'].setText(str(step.timeout))
+        elif t == 'js':
+            if 'field_edit' in ctrls: ctrls['field_edit'].setText(step.field_name or '')
+            if 'code_edit' in ctrls: ctrls['code_edit'].setPlainText(step.js_code or '')
+        elif t == 'upload':
+            if 'selector_edit' in ctrls: ctrls['selector_edit'].setText(step.selector or '')
+            if 'path_edit' in ctrls: ctrls['path_edit'].setText(step.upload_file_path or '')
+        elif t == 'python':
+            if 'code_edit' in ctrls: ctrls['code_edit'].setPlainText(step.python_code or '')
+        elif t == 'desktop_focus':
+            if 'title_edit' in ctrls: ctrls['title_edit'].setText(step.value or '')
+        elif t == 'desktop_click':
+            if 'selector_edit' in ctrls: ctrls['selector_edit'].setText(step.selector or '')
+        elif t == 'desktop_input':
+            if 'selector_edit' in ctrls: ctrls['selector_edit'].setText(step.selector or '')
+            if 'value_edit' in ctrls: ctrls['value_edit'].setPlainText(step.value or '')
+        elif t == 'desktop_wait':
+            if 'selector_edit' in ctrls: ctrls['selector_edit'].setText(step.selector or '')
+            if 'timeout_edit' in ctrls: ctrls['timeout_edit'].setText(str(step.timeout))
+        elif t == 'desktop_extract':
+            if 'selector_edit' in ctrls: ctrls['selector_edit'].setText(step.selector or '')
+            if 'field_edit' in ctrls: ctrls['field_edit'].setText(step.field_name or '')
+            if 'attr_edit' in ctrls: ctrls['attr_edit'].setText(step.extract_attr or '')
+        elif t == 'desktop_python':
+            if 'code_edit' in ctrls: ctrls['code_edit'].setPlainText(step.python_code or '')
+
+        # 预等待控件（桌面节点不显示）
+        show_pre = t not in ('wait', 'group', 'js', 'upload', 'python',
+                            'desktop_focus', 'desktop_click', 'desktop_input',
+                            'desktop_wait', 'desktop_extract', 'desktop_python')
         self.pre_wait_widget.setVisible(show_pre)
-        if show_pre:
-            self.chk_pre_wait.blockSignals(True); self.spin_pre_wait.blockSignals(True)
-            self.chk_pre_wait_element.blockSignals(True); self.pre_wait_xpath_edit.blockSignals(True)
+        if show_pre and hasattr(self, 'chk_pre_wait'):
+            self.chk_pre_wait.blockSignals(True)
+            self.spin_pre_wait.blockSignals(True)
+            self.chk_pre_wait_element.blockSignals(True)
+            self.pre_wait_xpath_edit.blockSignals(True)
             self.chk_pre_wait.setChecked(step.pre_wait_seconds > 0)
             self.spin_pre_wait.setValue(step.pre_wait_seconds)
             self.chk_pre_wait_element.setChecked(step.pre_wait_element)
-            self.pre_wait_xpath_edit.setText(step.pre_wait_xpath)
-            self.chk_pre_wait.blockSignals(False); self.spin_pre_wait.blockSignals(False)
-            self.chk_pre_wait_element.blockSignals(False); self.pre_wait_xpath_edit.blockSignals(False)
-        type_map = {'navigate': 0, 'click': 1, 'input': 2, 'extract': 3, 'wait': 4, 'js': 5, 'upload': 6, 'python': 7, 'group': 8}
-        idx = type_map.get(step.type, 0)
+            self.pre_wait_xpath_edit.setText(step.pre_wait_xpath or '')
+            self.chk_pre_wait.blockSignals(False)
+            self.spin_pre_wait.blockSignals(False)
+            self.chk_pre_wait_element.blockSignals(False)
+            self.pre_wait_xpath_edit.blockSignals(False)
+
+        # 设置页面索引和下拉框
+        type_map = {'navigate': 0, 'click': 1, 'input': 2, 'extract': 3, 'wait': 4,
+                    'js': 5, 'upload': 6, 'python': 7, 'desktop_focus': 8,
+                    'desktop_click': 9, 'desktop_input': 10, 'desktop_wait': 11,
+                    'desktop_extract': 12, 'desktop_python': 13, 'group': 14}
+        idx = type_map.get(t, 0)
         self.config_stack.setCurrentIndex(idx)
         self.type_switch_combo.blockSignals(True)
         self.type_switch_combo.setCurrentIndex(idx)
@@ -1298,69 +1680,108 @@ class MainWindow(QMainWindow):
             return
         step = self.current_step
         sender = self.sender()
+
+        # 处理名称编辑框（所有节点共用）
         for t, ctrls in self.step_controls.items():
-            if ctrls.get('name_edit') is sender:
+            if 'name_edit' in ctrls and ctrls['name_edit'] is sender:
                 step.name = sender.text()
                 item = self.step_tree.currentItem()
                 if isinstance(item, StepTreeItem):
                     item.update_display()
                 return
+
         t = step.type
         ctrls = self.step_controls.get(t)
         if not ctrls:
             return
+
+        # ---- 安全访问控件 ----
+        def safe_get(ctrl_name, is_text=False):
+            """获取控件，如果不存在则返回 None，并屏蔽信号"""
+            w = ctrls.get(ctrl_name)
+            if w is None:
+                return None
+            return w
+
         if t == 'navigate':
-            if sender is ctrls['url_edit']:
-                step.value = ctrls['url_edit'].text()
-            elif sender is ctrls['timeout_edit']:
-                step.timeout = int(ctrls['timeout_edit'].text() or 3000)
+            w = safe_get('url_edit')
+            if w and sender is w: step.value = w.text()
+            w = safe_get('timeout_edit')
+            if w and sender is w: step.timeout = int(w.text() or 3000)
         elif t == 'click':
-            if sender is ctrls['selector_edit']:
-                step.selector = ctrls['selector_edit'].text()
-            elif sender is ctrls['timeout_edit']:
-                step.timeout = int(ctrls['timeout_edit'].text() or 5000)
+            w = safe_get('selector_edit')
+            if w and sender is w: step.selector = w.text()
+            w = safe_get('timeout_edit')
+            if w and sender is w: step.timeout = int(w.text() or 5000)
         elif t == 'input':
-            if sender is ctrls['selector_edit']:
-                step.selector = ctrls['selector_edit'].text()
-            elif sender is ctrls['value_edit']:
-                step.value = ctrls['value_edit'].toPlainText()
+            w = safe_get('selector_edit')
+            if w and sender is w: step.selector = w.text()
+            w = safe_get('value_edit')
+            if w and sender is w: step.value = w.toPlainText()
         elif t == 'extract':
-            if sender is ctrls['selector_edit']:
-                step.selector = ctrls['selector_edit'].text()
-            elif sender is ctrls['field_edit']:
-                step.field_name = ctrls['field_edit'].text()
-            elif sender is ctrls['attr_edit']:
-                step.extract_attr = ctrls['attr_edit'].text()
+            w = safe_get('selector_edit')
+            if w and sender is w: step.selector = w.text()
+            w = safe_get('field_edit')
+            if w and sender is w: step.field_name = w.text()
+            w = safe_get('attr_edit')
+            if w and sender is w: step.extract_attr = w.text()
         elif t == 'wait':
-            if sender is ctrls['timeout_edit']:
-                step.timeout = int(ctrls['timeout_edit'].text() or 10000)
+            w = safe_get('timeout_edit')
+            if w and sender is w: step.timeout = int(w.text() or 10000)
         elif t == 'js':
-            if sender is ctrls['field_edit']:
-                step.field_name = ctrls['field_edit'].text()
-            elif sender is ctrls['code_edit']:
-                step.js_code = ctrls['code_edit'].toPlainText()
+            w = safe_get('field_edit')
+            if w and sender is w: step.field_name = w.text()
+            w = safe_get('code_edit')
+            if w and sender is w: step.js_code = w.toPlainText()
         elif t == 'upload':
-            if sender is ctrls['selector_edit']:
-                step.selector = ctrls['selector_edit'].text()
-            elif sender is ctrls['path_edit']:
-                step.upload_file_path = ctrls['path_edit'].text()
+            w = safe_get('selector_edit')
+            if w and sender is w: step.selector = w.text()
+            w = safe_get('path_edit')
+            if w and sender is w: step.upload_file_path = w.text()
         elif t == 'python':
-            if sender is ctrls['name_edit']:
-                step.name = ctrls['name_edit'].text()
-            elif sender is ctrls['code_edit']:
-                step.python_code = ctrls['code_edit'].toPlainText()
+            w = safe_get('code_edit')
+            if w and sender is w: step.python_code = w.toPlainText()
+        elif t == 'desktop_focus':
+            w = safe_get('title_edit')
+            if w and sender is w: step.value = w.text()
+        elif t == 'desktop_click':
+            w = safe_get('selector_edit')
+            if w and sender is w: step.selector = w.text()
+        elif t == 'desktop_input':
+            w = safe_get('selector_edit')
+            if w and sender is w: step.selector = w.text()
+            w = safe_get('value_edit')
+            if w and sender is w: step.value = w.toPlainText()
+        elif t == 'desktop_wait':
+            w = safe_get('selector_edit')
+            if w and sender is w: step.selector = w.text()
+            w = safe_get('timeout_edit')
+            if w and sender is w: step.timeout = int(w.text() or 5000)
+        elif t == 'desktop_extract':
+            w = safe_get('selector_edit')
+            if w and sender is w: step.selector = w.text()
+            w = safe_get('field_edit')
+            if w and sender is w: step.field_name = w.text()
+            w = safe_get('attr_edit')
+            if w and sender is w: step.extract_attr = w.text()
+        elif t == 'desktop_python':
+            w = safe_get('code_edit')
+            if w and sender is w: step.python_code = w.toPlainText()
+
+        # 预等待控件
         if sender in (self.chk_pre_wait, self.spin_pre_wait, self.chk_pre_wait_element, self.pre_wait_xpath_edit):
             step.pre_wait_seconds = self.spin_pre_wait.value() if self.chk_pre_wait.isChecked() else 0
             step.pre_wait_element = self.chk_pre_wait_element.isChecked() and self.chk_pre_wait.isChecked()
             step.pre_wait_xpath = self.pre_wait_xpath_edit.text() if step.pre_wait_element else ""
+
         item = self.step_tree.currentItem()
         if isinstance(item, StepTreeItem):
             item.update_display()
-
+            
     def _on_type_switched(self, index):
         if not self.current_step:
             return
-        type_map = {0: 'navigate', 1: 'click', 2: 'input', 3: 'extract', 4: 'wait', 5: 'js', 6: 'upload', 7: 'python', 8: 'group'}
+        type_map = {0: 'navigate', 1: 'click', 2: 'input', 3: 'extract', 4: 'wait', 5: 'js', 6: 'upload', 7: 'python', 8: 'desktop_focus', 9: 'desktop_click', 10: 'desktop_input', 11: 'desktop_wait', 12: 'desktop_extract', 13: 'desktop_python', 14: 'group'}
         new_type = type_map.get(index, 'click')
         self.current_step.type = new_type
         self._populate_controls(self.current_step)
@@ -1515,6 +1936,7 @@ class MainWindow(QMainWindow):
     #             request.reject()
     #         self._uninstall_upload_interceptor()
 if __name__ == "__main__":
+
     os.environ["QTWEBENGINE_CHROMIUM_FLAGS"] = "--remote-debugging-port=9222 --ignore-certificate-errors"
     parser = argparse.ArgumentParser()
     parser.add_argument("--flow", type=str)
@@ -1522,6 +1944,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     app = QApplication(sys.argv)
+    app.setAttribute(Qt.AA_DontUseNativeDialogs, True)   # 关键：禁用原生文件对话框
     if args.auto_run:
         win = MainWindow(auto_run_flow=args.flow if args.flow else None)
     else:
